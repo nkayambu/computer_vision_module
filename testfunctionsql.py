@@ -12,21 +12,14 @@ cursor = conn.cursor()
 # TIME: TEXT (use hour/min data exclude seconds)
 # SIGN COORDINATE AND TIME ARE UNIQUE TO A SPECIFIC POINT (TO PREVENT DUPLICATES AT THE SAME TIMESTAMP)
 
-conn.execute("CREATE TABLE DATA(SIGN TEXT, COORDINATE TEXT, DATE TEXT, TIME TEXT, unique(SIGN, COORDINATE, DATE, TIME));")
+# initializes table in database
+#conn.execute("CREATE TABLE DATA(SIGN TEXT, COORDINATE TEXT, DATE TEXT, TIME TEXT, unique(SIGN, COORDINATE, DATE, TIME));")
 
 # functions for each command needed to add data to the table
 # insert function
 # create statement to execute
 def insert(sign, coordinate, date, time):
-    #statement = "if not exists (select * from data x where x.SIGN = " + str(sign) \
-    #+ " and x.LATITUDE = " + str(lat) + "and x.LONGITUDE = " + str(long) + " and x.DATE = " + str(date) \
-    #+ " and x.TIME = " + time + ") INSERT INTO DATA (SIGN, LATITUDE, LONGITUDE, DATE, TIME) VALUES(" \
-    #+ str(sign) + ',' + str(lat) + ',' + str(long) + ',' + str(date) + ',' + str(time) + ");"
-    
-    #conn.execute(statement)
-    #conn.commit()
-    #command = "INSERT INTO DATA(SIGN, COORDINATE, DATE, TIME) VALUES(" + sign + ',' + coordinate + ',' + date + ',' + time + ");"
-    
+    # all values are unique to duplicates can be ignored 
     cursor.execute("INSERT OR IGNORE INTO DATA(SIGN, COORDINATE, DATE, TIME) VALUES(?, ?, ?, ? );", (sign, coordinate, date, time))
     conn.commit()
     table = cursor.execute("SELECT * FROM DATA;")
@@ -37,10 +30,7 @@ def insert(sign, coordinate, date, time):
     else: 
         print("insertion error")
     
-
-    
-
-# select/print function
+# print function
 # for entire table
 def print_table():
     rows = cursor.execute("SELECT * FROM DATA;")
@@ -48,7 +38,6 @@ def print_table():
         print("SIGN: ", items[0], " COORDINATE: ", items[1], " DATE: ", items[2], " TIME: ", items[3])
 
 # test values
-
 ts = 'stop'
 tcord = '27493825.4328791, 43890214.38970125'
 tdate = '01/23/23'
