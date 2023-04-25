@@ -14,12 +14,12 @@ testfunctionssql.py contains the functions to insert and print different values 
 
 database_initializer.py contains code that only needs to be run once to create the database and create a table to hold data in that database.  The file specifies the different data being collected and how it is being stored.  Below is an overview of what is being stored in the database.  
 
-Database: 
-Table Data
->ALL DATA IS STORED AS TEXT\n
->SIGN\n
->LATITIUDE\n
->LONGITUDE\n
->DATE\n
->TIME\n
->ALL VALUES ARE UNIQUE FOR DUPLICATE HANDLING\n
+Database:  
+Table Data  
+>ALL DATA IS STORED AS TEXT  
+>SIGN  
+>LATITIUDE  
+>LONGITUDE  
+>DATE  
+>TIME  
+>ALL VALUES ARE UNIQUE FOR DUPLICATE HANDLING  
