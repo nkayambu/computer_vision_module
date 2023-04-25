@@ -16,10 +16,10 @@ database_initializer.py contains code that only needs to be run once to create t
 
 Database: 
 Table Data
->ALL DATA IS STORED AS TEXT
->SIGN
->LATITIUDE
->LONGITUDE
->DATE
->TIME
->ALL VALUES ARE UNIQUE FOR DUPLICATE HANDLING
+>ALL DATA IS STORED AS TEXT\n
+>SIGN\n
+>LATITIUDE\n
+>LONGITUDE\n
+>DATE\n
+>TIME\n
+>ALL VALUES ARE UNIQUE FOR DUPLICATE HANDLING\n
