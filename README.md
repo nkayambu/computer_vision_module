@@ -8,7 +8,11 @@ lidar_averaging.py contains the lidar averaging function.  The function obtains 
 
 detection_w_classifier.py contains the new detection software.  This file will work similarly to main.py however will be implementing the sliding windows in order to detect multiple objects.  This will be considered the new "main" software in this project and will be running alongside the lidar, testfunctionssql, gps, and detection_helpers. 
 
+Object_Detection1.py is the same as detection_w_classifier.py but instead works with live video
+
 detection_helpers.py contains the functions to implement the sliding window and image pyramid to work for object detection.  
+
+ODnew.py is the classification that takes place in main.py on live video
 
 testfunctionssql.py contains the functions to insert and print different values from the database.  
 
