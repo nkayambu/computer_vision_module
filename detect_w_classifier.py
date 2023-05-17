@@ -33,7 +33,7 @@ ROI_SIZE = eval(args["size"])
 INPUT_SIZE = (256, 256)
 
 #load model
-model = tf.keras.models.load_model("final20val.model")
+model = tf.keras.models.load_model("7_class_unknown.model")
 
 # load the input image from disk, resize it such that it has the
 # has the supplied width, and then grab its dimensions

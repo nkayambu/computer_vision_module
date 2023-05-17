@@ -1,16 +1,20 @@
 #import the necessary packages
-from tensorflow.keras.applications.resnet import preprocess_input
-from tensorflow.keras.preprocessing.image import img_to_array
-from tensorflow.keras.applications import imagenet_utils
+import tensorflow as tf
+from keras.applications.resnet import preprocess_input
+from keras.preprocessing.image import img_to_array
+from keras.applications import imagenet_utils
 from imutils.object_detection import non_max_suppression
 from detection_helpers import sliding_window
 from detection_helpers import image_pyramid
+from lidar_averaging import getTFminiData
+
+
 import numpy as np
 import argparse
 import imutils
 import time
 import cv2
-import tensorflow as tf
+
 from PIL import Image
 
 # construct the argument parse and parse the arguments
@@ -27,10 +31,10 @@ ap.add_argument("-v", "--visualize", type=int, default=-1,
 args = vars(ap.parse_args())'''
 
 # initialize variables used for the object detection procedure
-WIDTH = 600
+WIDTH = 256
 PYR_SCALE = 2.5
-WIN_STEP = 8
-ROI_SIZE = (150,175)
+WIN_STEP = 12
+ROI_SIZE = (175,200)
 INPUT_SIZE = (256, 256)
 
 #load model
@@ -38,29 +42,33 @@ model = tf.keras.models.load_model("7_class.model")
 
 #load live video
 video = cv2.VideoCapture(0)
-#time.sleep(5)
+
+
+#video.set(cv2.CAP_PROP_FPS, 10)
 
 while True:
-		time.sleep(5)
 		ret, frame = video.read()
 		#if (ret == False):
 			#print("No camera")
 			#break
 
-		im = Image.fromarray(frame)
+		# convert image to RGB
+		rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+		im = Image.fromarray(rgb)
+
 
 		# resize for input to model 256x256
 		im = im.resize((256, 256))
 		img_array = np.array(im)
 		# change input to input tensor
 		img_array = np.expand_dims(img_array, axis=0)
-		#cv2.imshow(captures)
 
-		# grab its dimensions
-		(H, W) = img_array[0].shape[:2]
-
+		#load the input image from disk, resize it such that it has the
+		#has the supplied width, and then grab its dimensions
+		orig = imutils.resize(img_array, width=WIDTH)
+		(H, W) = orig.shape[:2]
 		# initialize the image pyramid
-		pyramid = image_pyramid(img_array[0], scale=PYR_SCALE, minSize=ROI_SIZE)
+		pyramid = image_pyramid(orig, scale=PYR_SCALE, minSize=ROI_SIZE)
 		# initialize two lists, one to hold the ROIs generated from the image
 		# pyramid and sliding window, and another list used to store the
 		# (x, y)-coordinates of where the ROI was in the original image
@@ -93,6 +101,16 @@ while True:
 				locs.append((x, y, x + w, y + h))
 				# check to see if we are visualizing each of the sliding
 				# windows in the image pyramid
+				if -1 > 0:
+					# clone the original image and then draw a bounding box
+					# surrounding the current region
+					clone = orig.copy()
+					cv2.rectangle(clone, (x, y), (x + w, y + h),
+								  (0, 255, 0), 2)
+					# show the visualization and current ROI
+					cv2.imshow("Visualization", clone)
+					cv2.imshow("ROI", roiOrig)
+					cv2.waitKey(0)
 
 		# show how long it took to loop over the image pyramid layers and
 		# sliding window locations
@@ -110,7 +128,7 @@ while True:
 		print("[INFO] classifying ROIs took {:.5f} seconds".format(
 			end - start))
 		prediction = prediction[:, 0:6]
-		#print(prediction)
+		print(prediction)
 
 		# decode the predictions and initialize a dictionary which maps class
 		# labels (keys) to any ROIs associated with that label (values)
@@ -119,7 +137,8 @@ while True:
 		#print(preds)
 		#print(len(prediction))
 		print(f"class: {preds[0]}, score: {prediction[0][preds[0]]}")
-		labels = ["10 speed limit sign", "15 speed limit sign", "25 speed limit sign", "30 speed limit sign", "35 speed limit sign", "45 speed limit sign", "Stop Sign"]
+		labels = ["10 speed limit sign", "15 speed limit sign", "25 speed limit sign", "30 speed limit sign", "35 speed limit sign", "45 speed limit sign", "Truck (Slow sign)", "Pedestrian (Stop sign)",
+					  "Slow Sign (Wrong Way)", "Stop Sign (Yield sign)", "Vehicle (Car)", "Wrong Way (Truck) ", " Yield Sign (Ped)"]
 
 		labels2 = {}
 		preds2 = []
@@ -128,18 +147,13 @@ while True:
 			# print(preds2[-1])
 
 		# loop over the predictions
-		print(preds2)
-
 		for (i, p) in enumerate(preds2):
 
 			# grab the prediction information for the current ROI
 			(imageID, label, prob) = p
 			# filter out weak detections by ensuring the predicted probability
 			# is greater than the minimum probability
-			if prob >= .99:
-				#print(p)
-
-
+			if prob >= .97:
 				# grab the bounding box associated with the prediction and
 				# convert the coordinates
 				box = locs[i]
@@ -152,23 +166,25 @@ while True:
 		# loop over the labels for each of detected objects in the image
 		for label in labels2.keys():
 			# clone the original image so that we can draw on it
-			#print(f"[INFO] showing results for '{label}'")
-			#clone = image_array[0].copy()
+			print(f"[INFO] showing results for '{label}'")
+			clone = orig.copy()
 			# loop over all bounding boxes for the current label
-			'''for (box, prob) in labels2[label]:
+			for (box, prob) in labels2[label]:
 				# draw the bounding box on the image
 				(startX, startY, endX, endY) = box
-				cv2.rectangle(img_array[0], (startX, startY), (endX, endY),
-					(0, 255, 0), 2)'''
+				cv2.rectangle(clone, (startX, startY), (endX, endY),
+					(0, 255, 0), 2)
+			# show the results *before* applying non-maxima suppression, then
+			# clone the image again so we can display the results *after*
 			# applying non-maxima suppression
-			#clone = img_array[0].copy()
+			clone = orig.copy()
 			# extract the bounding boxes and associated prediction
 			# probabilities, then apply non-maxima suppression
 			boxes = np.array([p[0] for p in labels2[label]])
 			proba = np.array([p[1] for p in labels2[label]])
 			boxes = non_max_suppression(boxes, proba)
-			#print("boxes: ", boxes)
-			#print(f"prob: {proba}")
+			print("boxes: ", boxes)
+			print(f"prob: {proba}")
 
 			probability = prediction[0][preds[0]]
 			probability = "{:.2f}".format(probability)
@@ -177,17 +193,16 @@ while True:
 			# non-maxima suppression
 			for (startX, startY, endX, endY) in boxes:
 				# draw the bounding box and label on the image
-				cv2.rectangle(img_array[0], (startX, startY), (endX, endY),
+				cv2.rectangle(clone, (startX, startY), (endX, endY),
 							  (0, 255, 0), 2)
 				y = startY - 10 if startY - 10 > 10 else startY + 10
-				cv2.putText(img_array[0], text, (startX, y),
+				cv2.putText(clone, text, (startX, y),
 							cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
 			# show the output after apply non-maxima suppression
-			orig = imutils.resize(img_array[0], width=400)
-			cv2.imshow("Capturing", orig)
-			# key = cv2.waitKey(1)
-			# if key == ord('q'):
-			# 	break
+			cv2.imshow("Capturing", clone)
+			key = cv2.waitKey(1)
+			if key == ord('q'):
+				break
 
 video.release()
 cv2.destroyAllWindows()
